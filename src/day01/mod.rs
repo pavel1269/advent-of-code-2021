@@ -5,14 +5,42 @@ pub fn get_solution_part1() -> i64 {
     return result;
 }
 
+pub fn get_solution_part2() -> i64 {
+    let input = get_input();
+    let result = count_increment_window(&input);
+    return result;
+}
+
 fn count_increments(measurements: &[i32]) -> i64 {
     let mut last_number = measurements[0];
     let mut increments = 0;
-    for &entry1 in measurements.iter() {
-        if entry1 > last_number {
+    for &entry in measurements.iter() {
+        if entry > last_number {
             increments += 1;
         }
-        last_number = entry1;
+        last_number = entry;
+    }
+
+    return increments;
+}
+
+fn count_increment_window(measurements: &[i32]) -> i64 {
+    let mut window_sum = [0, 0, 0, 0];
+    let mut increments = 0;
+    for (index, &entry) in measurements.iter().enumerate() {
+        window_sum[1] += entry;
+        window_sum[2] += entry;
+        window_sum[3] += entry;
+
+        // println!("index: {}, [3]: {}, [2]: {}", index, window_sum[1], window_sum[0]);
+        if index > 2 && window_sum[1] > window_sum[0] {
+            increments += 1;
+        }
+
+        window_sum[0] = window_sum[1];
+        window_sum[1] = window_sum[2];
+        window_sum[2] = window_sum[3];
+        window_sum[3] = 0;
     }
 
     return increments;
@@ -54,5 +82,19 @@ mod tests {
         let result = get_solution_part1();
 
         assert_eq!(1681, result);
+    }
+
+    #[test]
+    fn example_part2_correct_result() {
+        let result = count_increment_window(EXAMPLE_INPUT);
+
+        assert_eq!(5, result);
+    }
+
+    #[test]
+    fn input_part2_correct_result() {
+        let result = get_solution_part2();
+
+        assert_eq!(1704, result);
     }
 }
