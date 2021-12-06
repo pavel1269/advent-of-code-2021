@@ -1,4 +1,5 @@
 mod bingo;
+
 use bingo::*;
 
 pub fn get_solution_part1() -> i64 {
@@ -7,28 +8,56 @@ pub fn get_solution_part1() -> i64 {
     return result;
 }
 
-fn get_part1_result(input: &str) -> i64 {
-    let (drawn_numbers, mut bingos) = parse_board(input);
-    match draw_bingo(&drawn_numbers, &mut bingos) {
-        Some((number, bingo_index)) => {
-            let sum = bingos[bingo_index].get_sum_unmarked_numbers();
-            return sum * number as i64;
-        },
-        None => panic!("No bingo won"),
-    };
+pub fn get_solution_part2() -> i64 {
+    let input = get_input();
+    let result = get_part2_result(input);
+    return result;
 }
 
-fn draw_bingo(drawn_numbers: &Vec<i32>, bingos: &mut Vec<Bingo>) -> Option<(i32, usize)> {
+fn get_part1_result(input: &str) -> i64 {
+    let (drawn_numbers, mut bingos) = parse_board(input);
+    let (number, bingo_index) = draw_bingo_till_first(&drawn_numbers, &mut bingos);
+    let sum = bingos[bingo_index].get_sum_unmarked_numbers();
+    return sum * number as i64;
+}
+
+fn get_part2_result(input: &str) -> i64 {
+    let (drawn_numbers, mut bingos) = parse_board(input);
+    let (number, bingo_index) = draw_bingo_till_last(&drawn_numbers, &mut bingos);
+    let sum = bingo_index.get_sum_unmarked_numbers();
+    println!("Sum: '{}', number: '{}'", sum, number);
+    return sum * number as i64;
+}
+
+fn draw_bingo_till_first(drawn_numbers: &Vec<i32>, bingos: &mut Vec<Bingo>) -> (i32, usize) {
     for number in drawn_numbers {
         for (bingo_index, bingo) in bingos.iter_mut().enumerate() {
             let is_winner = bingo.mark_number(*number);
             if is_winner {
-                return Some((*number, bingo_index));
+                return (*number, bingo_index);
             }
         }
     }
 
-    return None;
+    panic!("No bingo won");
+}
+
+fn draw_bingo_till_last<'a>(drawn_numbers: &Vec<i32>, bingos: &'a mut Vec<Bingo>) -> (i32, &'a Bingo) {
+    let mut last_bingo: Option<usize> = None;
+    for number in drawn_numbers {
+        for bingo in bingos.iter_mut() {
+            bingo.mark_number(*number);
+        }
+
+        let remaining_bingos: Vec<(usize, &Bingo)> = bingos.iter().enumerate().filter(|(_, bingo)| !bingo.is_won()).collect();
+        if remaining_bingos.len() == 1 {
+            last_bingo = Some(remaining_bingos[0].0);
+        } else if remaining_bingos.len() == 0 {
+            return (*number, &bingos[last_bingo.unwrap()]);
+        }
+    }
+    
+    panic!();
 }
 
 fn parse_board(input: &str) -> (Vec<i32>, Vec<Bingo>) {
@@ -122,5 +151,19 @@ mod tests {
         let result = get_solution_part1();
 
         assert_eq!(41668, result);
+    }
+
+    #[test]
+    fn example_part2_correct_result() {
+        let result = get_part2_result(get_example_input());
+
+        assert_eq!(1924, result);
+    }
+
+    #[test]
+    fn input_part2_correct_result() {
+        let result = get_solution_part2();
+
+        assert_eq!(10478, result);
     }
 }

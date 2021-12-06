@@ -1,8 +1,10 @@
 const SHEET_SIZE: usize = 5;
 
+#[derive(Clone)]
 pub struct Bingo {
     highlighted: Vec<Vec<bool>>,
     numbers: Vec<Vec<i32>>,
+    won: bool,
 }
 
 impl Bingo {
@@ -15,7 +17,13 @@ impl Bingo {
             }
         }
 
-        return self.check_victory();
+        let won = self.check_victory();
+        self.won = won;
+        return won;
+    }
+
+    pub fn is_won(&self) -> bool {
+        return self.won;
     }
 
     fn check_victory(&self) -> bool {
@@ -57,6 +65,7 @@ impl Bingo {
         let mut bingo = Bingo {
             highlighted: vec![vec![false; SHEET_SIZE]; SHEET_SIZE],
             numbers: vec![vec![0; SHEET_SIZE]; SHEET_SIZE],
+            won: false,
         };
 
         for (row_index, row) in numbers.into_iter().enumerate() {
