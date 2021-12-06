@@ -5,6 +5,12 @@ pub fn get_solution_part1() -> i64 {
     return result;
 }
 
+pub fn get_solution_part2() -> i64 {
+    let input = get_input();
+    let result = calculate_number_of_fish(256, input);
+    return result;
+}
+
 fn calculate_number_of_fish(days: usize, fish_timers: &str) -> i64 {
     const NEW_FISH_TIMER: usize = 8;
     const FISH_RESET_TIMER: usize = 6;
@@ -62,5 +68,19 @@ mod tests {
         let result = get_solution_part1();
 
         assert_eq!(387413, result);
+    }
+    
+    #[test]
+    fn example_256days_correct_result() {
+        let result = calculate_number_of_fish(256, get_example_input());
+
+        assert_eq!(26984457539, result);
+    }
+    
+    #[test]
+    fn input_part2_correct_result() {
+        let result = get_solution_part2();
+
+        assert_eq!(1738377086345, result);
     }
 }
