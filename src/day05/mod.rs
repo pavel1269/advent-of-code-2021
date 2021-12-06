@@ -5,8 +5,27 @@ pub fn get_solution_part1() -> i64 {
     return result;
 }
 
+pub fn get_solution_part2() -> i64 {
+    let input = get_input();
+    let result = get_number_of_overlaps_with_diagonals(input);
+    return result;
+}
+
 fn get_number_of_overlaps(input: &str) -> i64 {
     let (max_x, max_y, vents) = parse_input(input);
+    let map = create_map(max_x, max_y, &vents);
+    let sum = calculate_overlap_count(&map);
+    return sum;
+}
+
+fn get_number_of_overlaps_with_diagonals(input: &str) -> i64 {
+    let (max_x, max_y, vents) = parse_input(input);
+    let map = create_map_with_diagonals(max_x, max_y, &vents);
+    let sum = calculate_overlap_count(&map);
+    return sum;
+}
+
+fn create_map(max_x: usize, max_y: usize, vents: &Vec<(usize, usize, usize, usize)>) -> Vec<Vec<i32>> {
     let mut map = vec![vec![0; max_x]; max_y];
 
     for (mut x1, mut y1, mut x2, mut y2) in vents {
@@ -34,10 +53,71 @@ fn get_number_of_overlaps(input: &str) -> i64 {
         }
     }
 
+    return map;
+}
+
+fn create_map_with_diagonals(max_x: usize, max_y: usize, vents: &Vec<(usize, usize, usize, usize)>) -> Vec<Vec<i32>> {
+    let mut map = create_map(max_x, max_y, vents);
+
+    for (mut x1, mut y1, mut x2, y2) in vents {
+        if y1 != *y2 && x1 != x2 {
+            if (x1 < x2 && y1 < *y2 ) || (x2 < x1 && *y2 < y1) {
+                // x2 > x1 <==> y2 > y1
+                // x1 > x2 <==> y1 > y2
+                // println!("Diag pipe type \\ [{},{}] -> [{},{}]", x1, y1, x2, y2);
+                if x1 > x2 {
+                    let tmp = x1;
+                    x1 = x2;
+                    x2 = tmp;
+                    y1 = *y2;
+                }
+    
+                for offset in 0..(x2-x1+1) {
+                    // println!("Diag pipe at [{},{}]", x1 + offset, y1 + offset);
+                    map[y1 + offset][x1 + offset] += 1;
+                }
+            } else {
+                // x1 > x2 => y1 < y2
+                // x2 > x1 => y2 < y1
+                // println!("Diag pipe type / [{},{}] -> [{},{}]", x1, y1, x2, y2);
+                if x1 > x2 {
+                    let tmp = x1;
+                    x1 = x2;
+                    x2 = tmp;
+                    y1 = *y2;
+                }
+    
+                for offset in 0..(x2-x1+1) {
+                    // println!("Diag pipe at [{},{}]", x1 + offset, y1 - offset);
+                    map[y1 - offset][x1 + offset] += 1;
+                }
+            }
+        }
+    }
+
+    // print_map(&map);
+    return map;
+}
+
+#[allow(dead_code)]
+fn print_map(map: &Vec<Vec<i32>>) {
+    for row in map {
+        for vent in row {
+            if *vent > 0 {
+                print!("{}", vent);
+            } else {
+                print!(".");
+            }
+        }
+        println!();
+    }
+}
+
+fn calculate_overlap_count(map: &Vec<Vec<i32>>) -> i64 {
     let mut sum = 0;
     for row in map {
         for point in row {
-            if point > 1 {
+            if *point > 1 {
                 sum += 1;
             }
         }
@@ -111,11 +191,24 @@ mod tests {
         assert_eq!(5, result);
     }
     
-
     #[test]
     fn input_part1_correct_result() {
         let result = get_solution_part1();
 
         assert_eq!(6283, result);
+    }
+
+    #[test]
+    fn example_part2_correct_result() {
+        let result = get_number_of_overlaps_with_diagonals(get_example_input());
+
+        assert_eq!(12, result);
+    }
+    
+    #[test]
+    fn input_part2_correct_result() {
+        let result = get_solution_part2();
+
+        assert_eq!(18864, result);
     }
 }
