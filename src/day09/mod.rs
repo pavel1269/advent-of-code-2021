@@ -26,37 +26,29 @@ fn calculate_largest_basins(input: &str) -> i64 {
             }
 
             let basin_key = &(row_index, column_index);
-            let basin_up_key = &if row_index > 0 {
-                (row_index - 1, column_index)
-            } else {
-                (0, 0)
-            };
-            let basin_left_key = &if column_index > 0 {
-                (row_index, column_index - 1)
-            } else {
-                (0, 0)
-            };
+            let basin_up_key = (row_index > 0).then(|| (row_index - 1, column_index));
+            let basin_left_key = (column_index > 0).then(|| (row_index, column_index - 1));
 
-            let basin_up = row_index > 0 && basins.contains_key(basin_up_key);
-            let basin_left = column_index > 0 && basins.contains_key(basin_left_key);
+            let basin_up_exists = row_index > 0 && basins.contains_key(&basin_up_key.unwrap());
+            let basin_left_exists = column_index > 0 && basins.contains_key(&basin_left_key.unwrap());
 
-            if basin_left && basin_up {
+            if basin_left_exists && basin_up_exists {
                 // merge them
-                let basin_up = basins[basin_up_key];
-                let basin_left = basins[basin_left_key];
+                let basin_up = basins[&basin_up_key.unwrap()];
+                let basin_left = basins[&basin_left_key.unwrap()];
                 if basin_up != basin_left {
                     basin_sizes[basin_up] += basin_sizes[basin_left];
                     basin_sizes[basin_left] = 0;
-                    *basins.get_mut(basin_left_key).unwrap() = basin_up;
+                    *basins.get_mut(&basin_left_key.unwrap()).unwrap() = basin_up;
                 }
             }
 
-            if basin_up {
-                let basin = basins[basin_up_key];
+            if basin_up_exists {
+                let basin = basins[&basin_up_key.unwrap()];
                 basins.insert(*basin_key, basin);
                 basin_sizes[basin] += 1;
-            } else if basin_left {
-                let basin = basins[basin_left_key];
+            } else if basin_left_exists {
+                let basin = basins[&basin_left_key.unwrap()];
                 basins.insert(*basin_key, basin);
                 basin_sizes[basin] += 1;
             } else {
