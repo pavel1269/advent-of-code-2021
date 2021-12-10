@@ -152,7 +152,6 @@ fn parse_input(input: &str) -> Vec<(Vec<String>, Vec<String>)> {
     }
 
     let result = input
-        .trim()
         .lines()
         .map(|input_line| {
             let captures = REGEX.captures(input_line).unwrap();

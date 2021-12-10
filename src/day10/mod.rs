@@ -12,7 +12,7 @@ pub fn get_solution_part2() -> i64 {
 
 fn fix_incomplete(input: &str) -> i64 {
     let mut scores = Vec::new();
-    for input_line in input.trim().lines() {
+    for input_line in input.lines() {
         let mut squares = Vec::new();
         let mut corrupted = false;
         for char in input_line.chars() {
@@ -55,7 +55,7 @@ fn fix_incomplete(input: &str) -> i64 {
 
 fn identify_corrupted_lines(input: &str) -> i64 {
     let mut sum = 0;
-    for input_line in input.trim().lines() {
+    for input_line in input.lines() {
         let mut squares = Vec::new();
         for char in input_line.chars() {
             match char {

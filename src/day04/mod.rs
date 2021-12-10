@@ -69,7 +69,7 @@ fn parse_board(input: &str) -> (Vec<i32>, Vec<Bingo>) {
     let mut bingos = Vec::new();
 
     for input_line in input_enumerate {
-        if input_line.trim().len() > 0 {
+        if input_line.len() > 0 {
             let parsed_line = parse_input_line(input_line);
             parsed_numbers.push(parsed_line);
         } else if !parsed_numbers.is_empty() {

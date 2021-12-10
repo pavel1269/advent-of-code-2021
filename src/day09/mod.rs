@@ -118,7 +118,6 @@ fn is_lowest(map: &Vec<Vec<u8>>, map_width: usize, row_index: usize, column_inde
 
 fn parse_input(input: &str) -> Vec<Vec<u8>> {
     return input
-        .trim()
         .lines()
         .map(|line| {
             line.as_bytes()
