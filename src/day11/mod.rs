@@ -4,14 +4,65 @@ pub fn get_solution_part1() -> i64 {
     return result;
 }
 
+pub fn get_solution_part2() -> i64 {
+    let input = get_input();
+    let result = synchronized_flash(input);
+    return result;
+}
+
 #[derive(Clone)]
 struct Map {
-    pub map: Vec<Vec<u8>>,
+    pub energy: Vec<Vec<u8>>,
 }
 
 impl Map {
-    pub fn iter_surrounding(&self, row: usize, column: usize) -> Vec<(usize, usize)> {
-        let size = self.map.len();
+    pub fn iter(&mut self) -> i64 {
+        use std::collections::HashSet;
+    
+        let mut flashes = 0;
+
+        let mut energy_next = self.energy.clone();
+        let mut to_flash: Vec<(usize, usize)> = Vec::new();
+        for (row_index, row) in energy_next.iter_mut().enumerate() {
+            for (column_index, energy) in row.iter_mut().enumerate() {
+                *energy += 1;
+                if *energy > 9 {
+                    to_flash.push((row_index, column_index));
+                }
+            }
+        }
+
+        // println!("ro flash: {}", to_flash.len());
+        let mut flashed: HashSet<(usize, usize)> = HashSet::new();
+        while to_flash.len() > 0 {
+            let to_flash_next = to_flash.pop().unwrap();
+            if flashed.contains(&to_flash_next) {
+                continue;
+            }
+
+            flashes += 1;
+            for (row_index, column_index) in self.iter_surrounding(to_flash_next.0, to_flash_next.1) {
+                let energy = &mut energy_next[row_index][column_index];
+                *energy += 1;
+                if *energy > 9 {
+                    to_flash.push((row_index, column_index));
+                }
+            }
+
+            flashed.insert(to_flash_next);
+        }
+
+        for flashed in flashed {
+            energy_next[flashed.0][flashed.1] = 0;
+        }
+
+        self.energy = energy_next;
+
+        return flashes;
+    }
+
+    fn iter_surrounding(&self, row: usize, column: usize) -> Vec<(usize, usize)> {
+        let size = self.energy.len();
         let mut result = Vec::new();
         for row_offset in -1..2 {
             if row_offset == -1 && row == 0 {
@@ -37,7 +88,7 @@ impl Map {
 
     #[allow(dead_code)]
     pub fn print(&self) {
-        for row in self.map.iter() {
+        for row in self.energy.iter() {
             for energy in row.iter().copied() {
                 print!("{}", energy);
             }
@@ -46,49 +97,31 @@ impl Map {
     }
 }
 
-fn calculate_flashes_count(input: &str, iterations: usize) -> i64 {
-    use std::collections::HashSet;
+fn synchronized_flash(input: &str) -> i64 {
+    let mut map = parse_input(input);
+    let expected = (map.energy.len() as i64) * (map.energy.len() as i64);
+    
+    let mut iter = 0;
+    #[allow(while_true)]
+    while true {
+        let iter_flashes = map.iter();
+        iter += 1;
 
+        if iter_flashes == expected {
+            return iter;
+        }
+    }
+
+    panic!();
+}
+
+fn calculate_flashes_count(input: &str, iterations: usize) -> i64 {
     let mut map = parse_input(input);
     let mut flashes = 0;
 
     for _iter in 0..iterations {
-        let mut map_next = map.clone();
-        let mut to_flash: Vec<(usize, usize)> = Vec::new();
-        for (row_index, row) in map_next.map.iter_mut().enumerate() {
-            for (column_index, energy) in row.iter_mut().enumerate() {
-                *energy += 1;
-                if *energy > 9 {
-                    to_flash.push((row_index, column_index));
-                }
-            }
-        }
-
-        // println!("ro flash: {}", to_flash.len());
-        let mut flashed: HashSet<(usize, usize)> = HashSet::new();
-        while to_flash.len() > 0 {
-            let to_flash_next = to_flash.pop().unwrap();
-            if flashed.contains(&to_flash_next) {
-                continue;
-            }
-
-            flashes += 1;
-            for (row_index, column_index) in map_next.iter_surrounding(to_flash_next.0, to_flash_next.1) {
-                let energy = &mut map_next.map[row_index][column_index];
-                *energy += 1;
-                if *energy > 9 {
-                    to_flash.push((row_index, column_index));
-                }
-            }
-
-            flashed.insert(to_flash_next);
-        }
-
-        for flashed in flashed {
-            map_next.map[flashed.0][flashed.1] = 0;
-        }
-
-        map = map_next;
+        let iter_flashes = map.iter();
+        flashes += iter_flashes;
 
         // println!("iter: {}", _iter);
         // map.print();
@@ -100,7 +133,7 @@ fn calculate_flashes_count(input: &str, iterations: usize) -> i64 {
 
 fn parse_input(input: &str) -> Map {
     return Map {
-        map: input
+        energy: input
             .lines()
             .map(|line| {
                 line.trim()
@@ -153,5 +186,19 @@ mod tests {
         let result = get_solution_part1();
 
         assert_eq!(1723, result);
+    }
+
+    #[test]
+    fn example_part2_correct_result() {
+        let result = synchronized_flash(get_example_input());
+
+        assert_eq!(195, result);
+    }
+
+    #[test]
+    fn input_part2_correct_result() {
+        let result = get_solution_part2();
+
+        assert_eq!(327, result);
     }
 }
