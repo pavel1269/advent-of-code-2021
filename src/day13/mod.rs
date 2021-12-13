@@ -6,10 +6,52 @@ pub fn get_solution_part1() -> i64 {
     return result;
 }
 
-fn points_after_fold(input: &str) -> i64 {
-    let (fold, points) = parse_input(input);
-    let (fold_x, distance) = *fold.first().unwrap();
+pub fn get_solution_part2() -> i64 {
+    let input = get_input();
+    let paper = points_after_all_folds(input);
+    print_paper(&paper);
+    return -1;
+}
 
+fn print_paper(paper: &HashSet<(usize, usize)>) {
+    let (width, height) = paper
+        .iter()
+        .copied()
+        .reduce(|(x1, y1), (x2, y2)| (std::cmp::max(x1, x2), std::cmp::max(y1, y2)))
+        .unwrap();
+
+    for y in 0..height + 1 {
+        for x in 0..width + 1 {
+            if paper.contains(&(x, y)) {
+                print!("#");
+            } else {
+                print!(" ");
+            }
+        }
+        println!();
+    }
+}
+
+fn points_after_all_folds(input: &str) -> HashSet<(usize, usize)> {
+    let (folds, mut points) = parse_input(input);
+    for (fold_x, distance) in folds {
+        points = fold(&points, fold_x, distance);
+    }
+    return points;
+}
+
+fn points_after_fold(input: &str) -> i64 {
+    let (folds, points) = parse_input(input);
+    let (fold_x, distance) = *folds.first().unwrap();
+    let folded_points = fold(&points, fold_x, distance);
+    return folded_points.len() as i64;
+}
+
+fn fold(
+    points: &HashSet<(usize, usize)>,
+    fold_x: bool,
+    distance: usize,
+) -> HashSet<(usize, usize)> {
     let mut folded_points = HashSet::new();
     for (x, y) in points.iter().copied() {
         if fold_x {
@@ -27,7 +69,7 @@ fn points_after_fold(input: &str) -> i64 {
         }
     }
 
-    return folded_points.len() as i64;
+    return folded_points;
 }
 
 fn parse_input(input: &str) -> (Vec<(bool, usize)>, HashSet<(usize, usize)>) {
@@ -102,5 +144,23 @@ fold along x=5";
         let result = get_solution_part1();
 
         assert_eq!(695, result);
+    }
+
+    #[test]
+    fn example_part2_correct_result() {
+        let paper = points_after_all_folds(get_example_input());
+        print_paper(&paper);
+
+        let result = paper.len();
+
+        assert_eq!(16, result);
+    }
+
+    #[test]
+    fn input_part2_correct_result() {
+        let result = get_solution_part2();
+
+        // GJZGLUPJ
+        assert_eq!(-1, result);
     }
 }
