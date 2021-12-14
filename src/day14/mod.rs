@@ -2,67 +2,65 @@ use std::collections::HashMap;
 
 pub fn get_solution_part1() -> i64 {
     let input = get_input();
-    let polymer = process_polymers(input, 10);
-    let result = calculate_part1(polymer);
+    let result = process_polymers(input, 10);
     return result;
 }
 
-fn calculate_part1(polymer: String) -> i64 {
-    let mut counts: HashMap<char, i64> = HashMap::new();
-
-    for char in polymer.chars() {
-        if counts.contains_key(&char) {
-            *counts.get_mut(&char).unwrap() += 1;
-        } else {
-            counts.insert(char, 1);
-        }
-    }
-
-    let mut counts = counts.iter().map(|(_, count)| count).copied().collect::<Vec<_>>();
-    counts.sort();
-    return counts.last().unwrap() - counts.first().unwrap();
+pub fn get_solution_part2() -> i64 {
+    let input = get_input();
+    let result = process_polymers(input, 40);
+    return result;
 }
 
-fn process_polymers(input: &str, iterations: usize) -> String {
-    let (mut template, rules) = parse_input(input);
+fn process_polymers(input: &str, iterations: usize) -> i64 {
+    let (mut doubles, rules) = parse_input(input);
 
     for _ in 0..iterations {
-        let mut new_template = Vec::new();
-        for (first, second) in template.iter().copied() {
+        let mut new_doubles = HashMap::new();
+        for (double, occurences) in doubles.iter() {
             if let Some((_, _, new_char)) = rules
                 .iter()
                 .copied()
-                .find(|(rule_first, rule_second, _)| first == *rule_first && second == *rule_second)
+                .find(|(rule_first, rule_second, _)| double.0 == *rule_first && double.1 == *rule_second)
             {
-                new_template.push((first, new_char));
-                new_template.push((new_char, second));
+                *new_doubles.entry((double.0, new_char)).or_default() += *occurences;
+                *new_doubles.entry((new_char, double.1)).or_default() += *occurences;
             } else {
-                new_template.push((first, second));
+                *new_doubles.entry(*double).or_default() += *occurences;
             }
         }
 
-        template = new_template;
+        doubles = new_doubles;
     }
 
-    let mut result = template.iter().copied().map(|(c, _)| c).collect::<String>();
-    result.push(template.last().unwrap().1);
-
-    return result;
+    let mut counts = HashMap::new();
+    for (double, occurenecs) in doubles.iter() {
+        *counts.entry(double.0).or_default() += *occurenecs;
+        *counts.entry(double.1).or_default() += *occurenecs;
+    }
+    counts.remove(&char::MAX);
+    let mut counts = counts.iter().map(|(_, count)| *count).collect::<Vec<i64>>();
+    counts.sort();
+    return (counts.last().unwrap() - counts.first().unwrap()) / 2;
 }
 
-fn parse_input(input: &str) -> (Vec<(char, char)>, Vec<(char, char, char)>) {
+fn parse_input(input: &str) -> (HashMap<(char, char), i64>, Vec<(char, char, char)>) {
     let mut input_iter = input.lines();
     let template = input_iter.next().unwrap();
 
     let mut previous_char = None;
-    let mut template_doubles = Vec::new();
+    let mut template_doubles = HashMap::new();
     for start_char in template.chars() {
-        if let Some(previous_char) = previous_char {
-            template_doubles.push((previous_char, start_char));
-        }
+        let double = if let Some(previous_char) = previous_char {
+            (previous_char, start_char)
+        } else {
+            (char::MAX, start_char)
+        };
 
+        *template_doubles.entry(double).or_default() += 1;
         previous_char = Some(start_char);
     }
+    template_doubles.insert((previous_char.unwrap(), char::MAX), 1);
 
     let mut rules = Vec::new();
     for line in input_iter {
@@ -112,34 +110,15 @@ CN -> C";
 
     #[test]
     fn example_parsed_correctly() {
-        let (start, rules) = parse_input(get_example_input());
+        let (doubles, rules) = parse_input(get_example_input());
 
-        assert_eq!(3, start.len());
+        assert_eq!(5, doubles.len());
         assert_eq!(16, rules.len());
     }
 
-    macro_rules! example_process_tests {
-        ($name: ident, $iterations: expr, $expect_result: expr) => {
-            #[test]
-            fn $name() {
-                let result = process_polymers(get_example_input(), $iterations);
-
-                assert_eq!($expect_result, result.len());
-            }
-        };
-    }
-
-    example_process_tests!(example_part1_process_1_iteration_correct_length, 1, 7);
-    example_process_tests!(example_part1_process_2_iteration_correct_length, 2, 13);
-    example_process_tests!(example_part1_process_3_iteration_correct_length, 3, 25);
-    example_process_tests!(example_part1_process_4_iteration_correct_length, 4, 49);
-    example_process_tests!(example_part1_process_5_iteration_correct_length, 5, 97);
-    example_process_tests!(example_part1_process_10_iteration_correct_length, 10, 3073);
-
     #[test]
     fn example_part1_correct_result() {
-        let polymer = process_polymers(get_example_input(), 10);
-        let result = calculate_part1(polymer);
+        let result = process_polymers(get_example_input(), 10);
 
         assert_eq!(1588, result);
     }
@@ -149,5 +128,19 @@ CN -> C";
         let result = get_solution_part1();
 
         assert_eq!(2590, result);
+    }
+
+    #[test]
+    fn example_part2_correct_result() {
+        let result = process_polymers(get_example_input(), 40);
+
+        assert_eq!(2188189693529, result);
+    }
+
+    #[test]
+    fn input_part2_correct_result() {
+        let result = get_solution_part2();
+
+        assert_eq!(2875665202438, result);
     }
 }
