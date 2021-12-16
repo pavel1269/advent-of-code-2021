@@ -106,54 +106,24 @@ mod tests {
         return "A0016C880162017C3686B18A3D4780";
     }
 
-    #[test]
-    fn example1_part1_correct_result() {
-        let packet = Packet::from(get_example_1_input());
-        let result = packet.version_sum();
-        assert_eq!(6, result);
+    macro_rules! example_part1 {
+        ($name: ident, $input: expr, $expectation: expr) => {
+            #[test]
+            fn $name() {
+                let packet = Packet::from($input);
+                let result = packet.version_sum();
+                assert_eq!($expectation, result);
+            }
+        };
     }
 
-    #[test]
-    fn example2_part1_correct_result() {
-        let packet = Packet::from(get_example_2_input());
-        let result = packet.version_sum();
-        assert_eq!(9, result);
-    }
-
-    #[test]
-    fn example3_part1_correct_result() {
-        let packet = Packet::from(get_example_3_input());
-        let result = packet.version_sum();
-        assert_eq!(14, result);
-    }
-
-    #[test]
-    fn example4_part1_correct_result() {
-        let packet = Packet::from(get_example_4_input());
-        let result = packet.version_sum();
-        assert_eq!(16, result);
-    }
-
-    #[test]
-    fn example5_part1_correct_result() {
-        let packet = Packet::from(get_example_5_input());
-        let result = packet.version_sum();
-        assert_eq!(12, result);
-    }
-
-    #[test]
-    fn example6_part1_correct_result() {
-        let packet = Packet::from(get_example_6_input());
-        let result = packet.version_sum();
-        assert_eq!(23, result);
-    }
-
-    #[test]
-    fn example7_part1_correct_result() {
-        let packet = Packet::from(get_example_7_input());
-        let result = packet.version_sum();
-        assert_eq!(31, result);
-    }
+    example_part1!(example1_part1_correct_result, get_example_1_input(), 6);
+    example_part1!(example2_part1_correct_result, get_example_2_input(), 9);
+    example_part1!(example3_part1_correct_result, get_example_3_input(), 14);
+    example_part1!(example4_part1_correct_result, get_example_4_input(), 16);
+    example_part1!(example5_part1_correct_result, get_example_5_input(), 12);
+    example_part1!(example6_part1_correct_result, get_example_6_input(), 23);
+    example_part1!(example7_part1_correct_result, get_example_7_input(), 31);
 
     #[test]
     fn input_part1_correct_result() {
