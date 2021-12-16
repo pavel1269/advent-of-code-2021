@@ -51,7 +51,7 @@ fn get_known_solutions() -> Vec<[fn() -> i64; MAX_PARTS]> {
         [day13::get_solution_part1, day13::get_solution_part2],
         [day14::get_solution_part1, day14::get_solution_part2],
         [day15::get_solution_part1, day15::get_solution_part2],
-        [day16::get_solution_part1, get_not_implemented_solution],
+        [day16::get_solution_part1, day16::get_solution_part2],
     ];
 
     return known_solutions;
