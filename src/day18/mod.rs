@@ -11,6 +11,12 @@ pub fn get_solution_part1() -> i64 {
     return result;
 }
 
+pub fn get_solution_part2() -> i64 {
+    let input = get_input();
+    let result = largest_sum(input);
+    return result;
+}
+
 #[derive(Clone)]
 struct SnailNumber {
     left_normal_number: Option<Number>,
@@ -46,14 +52,14 @@ impl SnailNumber {
         return left * 3 + right * 2;
     }
 
-    pub fn add(&self, other: SnailNumber) -> SnailNumber {
-        println!("= {:?}", self);
-        println!("+ {:?}", other);
+    pub fn add(&self, other: &SnailNumber) -> SnailNumber {
+        // println!("= {:?}", self);
+        // println!("+ {:?}", other);
         let mut add_result = SnailNumber::create(&self, other);
-        println!("after add:      {:?}", add_result);
+        // println!("after add:      {:?}", add_result);
         add_result.reduce();
-        println!("= {:?}", add_result);
-        println!();
+        // println!("= {:?}", add_result);
+        // println!();
         return add_result;
     }
 
@@ -61,11 +67,11 @@ impl SnailNumber {
         let mut reduce = true;
         while reduce {
             while let Some(_) = SnailNumber::reduce_explode(self, 0) {
-                println!("after explode:  {:?}", self);
+                // println!("after explode:  {:?}", self);
             }
             reduce = self.reduce_split();
             if reduce {
-                println!("after split:    {:?}", self);
+                // println!("after split:    {:?}", self);
             }
         }
     }
@@ -239,10 +245,10 @@ impl SnailNumber {
         );
     }
 
-    fn create(&self, right: SnailNumber) -> SnailNumber {
+    fn create(&self, right: &SnailNumber) -> SnailNumber {
         SnailNumber {
             left_snail_number: Some(Box::from(self.clone())),
-            right_snail_number: Some(Box::from(right)),
+            right_snail_number: Some(Box::from(right.clone())),
             ..Default::default()
         }
     }
@@ -277,6 +283,27 @@ impl Debug for SnailNumber {
     }
 }
 
+fn largest_sum(input: &str) -> i64 {
+    let numbers = input.lines().map(|line| SnailNumber::parse(line)).collect::<Vec<_>>();
+    let mut largest_sum = 0;
+    for (index, number) in numbers.iter().enumerate() {
+        for index2 in index + 1..numbers.len() {
+            let number2 = &numbers[index2];
+
+            let magnitude = number.add(number2).get_magnitude();
+            if largest_sum < magnitude {
+                largest_sum = magnitude;
+            }
+
+            let magnitude = number2.add(number).get_magnitude();
+            if largest_sum < magnitude {
+                largest_sum = magnitude;
+            }
+        }
+    }
+    return largest_sum;
+}
+
 fn sum_snail_numbers(input: &str) -> SnailNumber {
     let mut number = None;
     for line in input.lines() {
@@ -284,7 +311,7 @@ fn sum_snail_numbers(input: &str) -> SnailNumber {
         if number.is_none() {
             number = Some(other);
         } else {
-            number = Some(number.as_mut().unwrap().add(other));
+            number = Some(number.as_mut().unwrap().add(&other));
         }
     }
     return number.unwrap();
@@ -302,7 +329,7 @@ mod tests {
     fn snail_number_add_test() {
         let a = SnailNumber::parse("[[[[4,3],4],4],[7,[[8,4],9]]]");
         let b = SnailNumber::parse("[1,1]");
-        let result = a.add(b);
+        let result = a.add(&b);
 
         assert_eq!("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]", format!("{:?}", result));
     }
@@ -440,5 +467,17 @@ mod tests {
     fn part1_input() {
         let result = get_solution_part1();
         assert_eq!(4116, result);
+    }
+
+    #[test]
+    fn part2_example() {
+        let result = largest_sum(get_example_input());
+        assert_eq!(3993, result);
+    }
+
+    #[test]
+    fn part2_input() {
+        let result = get_solution_part2();
+        assert_eq!(4638, result);
     }
 }
