@@ -17,6 +17,7 @@ mod day15;
 mod day16;
 mod day17;
 mod day18;
+mod day19;
 
 fn main() {
     let known_solutions = get_known_solutions();
@@ -56,6 +57,7 @@ fn get_known_solutions() -> Vec<[fn() -> i64; MAX_PARTS]> {
         [day16::get_solution_part1, day16::get_solution_part2],
         [day17::get_solution_part1, day17::get_solution_part2],
         [day18::get_solution_part1, day18::get_solution_part2],
+        [day19::get_solution_part1, day19::get_solution_part2],
     ];
 
     return known_solutions;
