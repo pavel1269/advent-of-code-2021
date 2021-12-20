@@ -4,6 +4,12 @@ pub fn get_solution_part1() -> i64 {
     return result;
 }
 
+pub fn get_solution_part2() -> i64 {
+    let input = get_input();
+    let result = process_image(input, 50);
+    return result;
+}
+
 fn process_image(input: &str, iterations: usize) -> i64 {
     let (mut map, rules) = parse_input(input, iterations);
     let mut default = false;
@@ -163,5 +169,18 @@ mod tests {
     fn part1_test() {
         let result = get_solution_part1();
         assert_eq!(5663, result);
+    }
+
+    #[test]
+    fn process_image_example_50_iteration_test() {
+        let input = get_example_input();
+        let result = process_image(input, 50);
+        assert_eq!(3351, result);
+    }
+
+    #[test]
+    fn part2_test() {
+        let result = get_solution_part2();
+        assert_eq!(19638, result);
     }
 }
