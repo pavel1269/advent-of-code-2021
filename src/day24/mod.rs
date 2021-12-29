@@ -1,9 +1,25 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 pub fn get_solution_part1() -> i64 {
-    let _input = get_input();
-    process_instructions(_input);
-    return -1;
+    return find_solution().1;
+}
+
+pub fn get_solution_part2() -> i64 {
+    return find_solution().0;
+}
+
+fn find_solution() -> (i64, i64) {
+    // i[3] + 8 = i[4]  -> 1
+    // i[6] - 2 = i[7]  -> 3 - 9
+    // i[8] + 7 = i[9]  -> 1 - 2
+    // i[5]     = i[10] -> 1 - 9
+    // i[2] - 5 = i[11] -> 6 - 9
+    // i[1] + 2 = i[12] -> 1 - 7
+    // i[0] - 4 = i[13] -> 5 - 9
+
+    let min = 51619131181131;
+    let max = 97919997299495;
+    (min, max)
 }
 
 #[derive(Debug, PartialEq)]
@@ -22,297 +38,168 @@ enum Instructions {
     Eql(usize, Value),
 }
 
-#[derive(Debug, Clone, PartialEq)]
-enum PossibleValue {
-    Zero,
-    Value(i64),
-    Range(i64, i64, HashSet<usize>),
-}
-
+#[allow(dead_code)]
 fn process_instructions(input: &str) {
     let instructions = parse_input(input);
 
-    let mut registers = vec![PossibleValue::Zero; 4];
+    let mut states: HashMap<[i64; 4], Vec<HashSet<u8>>> = HashMap::new();
+    states.insert([0, 0, 0, 0], vec![HashSet::new(); 14]);
     let mut input_index = 0;
-    let mut useful_instruction = Vec::new();
-    for instruction in instructions.iter() {
-        let registers_backup = registers.clone();
-        let result = match instruction {
+    for (_index, instruction) in instructions.iter().enumerate() {
+        println!("[{} / {}]: {}", _index, instructions.len(), states.len());
+        println!("instruction: {:?}", instruction);
+        println!("states: {:?}", states);
+        println!();
+        let mut states_new: HashMap<[i64; 4], Vec<HashSet<u8>>> = HashMap::new();
+        match instruction {
             Instructions::Inp(register) => {
-                let mut inputs = HashSet::new();
-                inputs.insert(input_index);
+                for (registers, inputs) in states.iter() {
+                    // Optimization based on how its calculated
+                    if registers[3] != 0 {
+                        continue;
+                    }
+
+                    for result in 1..10 {
+                        let mut registers = registers.clone();
+                        *registers.get_mut(*register).unwrap() = result;
+
+                        let inputs_new = states_new
+                            .entry(registers)
+                            .or_insert(vec![HashSet::new(); 14]);
+
+                        for (a, b) in inputs_new.iter_mut().zip(inputs) {
+                            a.extend(b);
+                        }
+                        inputs_new
+                            .get_mut(input_index)
+                            .unwrap()
+                            .insert(result as u8);
+                    }
+                }
                 input_index += 1;
-                Some((*register, PossibleValue::Range(1, 9, inputs)))
             }
             Instructions::Add(register, value) => {
-                if *value == Value::Number(0) {
-                    None
-                } else if let Value::Number(number) = value {
-                    Some((
-                        *register,
-                        match &registers[*register] {
-                            PossibleValue::Zero => PossibleValue::Value(*number),
-                            PossibleValue::Value(a) => PossibleValue::Value(a + number),
-                            PossibleValue::Range(a, b, inputs) => {
-                                PossibleValue::Range(a + number, b + number, inputs.clone())
-                            }
-                        },
-                    ))
-                } else if let Value::Variable(register2) = value {
-                    let value = &registers[*register];
-                    let value2 = &registers[*register2];
-                    match value2 {
-                        PossibleValue::Zero => None,
-                        PossibleValue::Value(a) => Some((
-                            *register,
-                            match value {
-                                PossibleValue::Zero => value2.clone(),
-                                PossibleValue::Value(b) => PossibleValue::Value(a + b),
-                                PossibleValue::Range(b, c, inputs) => {
-                                    PossibleValue::Range(a + b, a + c, inputs.clone())
-                                }
-                            },
-                        )),
-                        PossibleValue::Range(a, b, inputs) => Some((
-                            *register,
-                            match value {
-                                PossibleValue::Zero => value2.clone(),
-                                PossibleValue::Value(c) => {
-                                    PossibleValue::Range(a + c, b + c, inputs.clone())
-                                }
-                                PossibleValue::Range(c, d, inputs2) => {
-                                    let mut inputs = inputs.clone();
-                                    inputs.extend(inputs2);
-                                    PossibleValue::Range(a + c, b + d, inputs)
-                                }
-                            },
-                        )),
+                for (registers, inputs) in states.iter() {
+                    let op1 = registers[*register];
+                    let op2 = if let Value::Number(number) = value {
+                        *number
+                    } else if let Value::Variable(register2) = value {
+                        registers[*register2]
+                    } else {
+                        panic!()
+                    };
+                    let mut registers = registers.clone();
+                    *registers.get_mut(*register).unwrap() = op1 + op2;
+
+                    for (a, b) in states_new
+                        .entry(registers)
+                        .or_insert(vec![HashSet::new(); 14])
+                        .iter_mut()
+                        .zip(inputs)
+                    {
+                        a.extend(b);
                     }
-                } else {
-                    panic!();
                 }
             }
             Instructions::Mul(register, value) => {
-                if PossibleValue::Zero == registers[*register] {
-                    None
-                } else if *value == Value::Number(1) {
-                    None
-                } else if *value == Value::Number(0) {
-                    Some((*register, PossibleValue::Zero))
-                } else if let Value::Number(number) = value {
-                    Some((
-                        *register,
-                        match &registers[*register] {
-                            PossibleValue::Zero => panic!(),
-                            PossibleValue::Value(a) => PossibleValue::Value(a * number),
-                            PossibleValue::Range(a, b, inputs) => {
-                                PossibleValue::Range(a * number, b * number, inputs.clone())
-                            }
-                        },
-                    ))
-                } else if let Value::Variable(register2) = value {
-                    let value = &registers[*register];
-                    let value2 = &registers[*register2];
-                    match value2 {
-                        PossibleValue::Zero => Some((*register, PossibleValue::Zero)),
-                        PossibleValue::Value(a) => Some((
-                            *register,
-                            match value {
-                                PossibleValue::Zero => value2.clone(),
-                                PossibleValue::Value(b) => PossibleValue::Value(a * b),
-                                PossibleValue::Range(b, c, inputs) => {
-                                    PossibleValue::Range(a * b, a * c, inputs.clone())
-                                }
-                            },
-                        )),
-                        PossibleValue::Range(a, b, inputs) => Some((
-                            *register,
-                            match value {
-                                PossibleValue::Zero => value2.clone(),
-                                PossibleValue::Value(c) => {
-                                    PossibleValue::Range(a * c, b * c, inputs.clone())
-                                }
-                                PossibleValue::Range(c, d, inputs2) => {
-                                    let mut inputs = inputs.clone();
-                                    inputs.extend(inputs2);
-                                    PossibleValue::Range(a * c, b * d, inputs)
-                                }
-                            },
-                        )),
+                for (registers, inputs) in states.iter() {
+                    let op1 = registers[*register];
+                    let op2 = if let Value::Number(number) = value {
+                        *number
+                    } else if let Value::Variable(register2) = value {
+                        registers[*register2]
+                    } else {
+                        panic!()
+                    };
+                    let mut registers = registers.clone();
+                    *registers.get_mut(*register).unwrap() = op1 * op2;
+
+                    for (a, b) in states_new
+                        .entry(registers)
+                        .or_insert(vec![HashSet::new(); 14])
+                        .iter_mut()
+                        .zip(inputs)
+                    {
+                        a.extend(b);
                     }
-                } else {
-                    panic!();
                 }
             }
             Instructions::Div(register, value) => {
-                if PossibleValue::Zero == registers[*register] {
-                    None
-                } else if let Value::Number(number) = value {
-                    Some((
-                        *register,
-                        match &registers[*register] {
-                            PossibleValue::Zero => panic!(),
-                            PossibleValue::Value(a) => PossibleValue::Value(a / number),
-                            PossibleValue::Range(a, b, inputs) => {
-                                PossibleValue::Range(a / number, b / number, inputs.clone())
-                            }
-                        },
-                    ))
-                } else {
-                    todo!();
+                for (registers, inputs) in states.iter() {
+                    let op1 = registers[*register];
+                    let op2 = if let Value::Number(number) = value {
+                        *number
+                    } else if let Value::Variable(register2) = value {
+                        registers[*register2]
+                    } else {
+                        panic!()
+                    };
+                    let mut registers = registers.clone();
+                    *registers.get_mut(*register).unwrap() = op1 / op2;
+
+                    for (a, b) in states_new
+                        .entry(registers)
+                        .or_insert(vec![HashSet::new(); 14])
+                        .iter_mut()
+                        .zip(inputs)
+                    {
+                        a.extend(b);
+                    }
                 }
             }
             Instructions::Mod(register, value) => {
-                if PossibleValue::Zero == registers[*register] {
-                    None
-                } else if let Value::Number(number) = value {
-                    Some((
-                        *register,
-                        match &registers[*register] {
-                            PossibleValue::Zero => panic!(),
-                            PossibleValue::Value(a) => PossibleValue::Value(a % number),
-                            PossibleValue::Range(a, b, inputs) => {
-                                if b < number {
-                                    PossibleValue::Range(*a, *b, inputs.clone())
-                                } else {
-                                    PossibleValue::Range(0, number - 1, inputs.clone())
-                                }
-                            }
-                        },
-                    ))
-                } else {
-                    todo!();
+                for (registers, inputs) in states.iter() {
+                    let op1 = registers[*register];
+                    let op2 = if let Value::Number(number) = value {
+                        *number
+                    } else if let Value::Variable(register2) = value {
+                        registers[*register2]
+                    } else {
+                        panic!()
+                    };
+                    let mut registers = registers.clone();
+                    *registers.get_mut(*register).unwrap() = op1 % op2;
+
+                    for (a, b) in states_new
+                        .entry(registers)
+                        .or_insert(vec![HashSet::new(); 14])
+                        .iter_mut()
+                        .zip(inputs)
+                    {
+                        a.extend(b);
+                    }
                 }
             }
-            Instructions::Eql(register, value) => match value {
-                Value::Number(a) => Some((
-                    *register,
-                    match &registers[*register] {
-                        PossibleValue::Zero => {
-                            if *a == 0 {
-                                PossibleValue::Value(1)
-                            } else {
-                                PossibleValue::Zero
-                            }
-                        }
-                        PossibleValue::Value(b) => {
-                            if *a == *b {
-                                PossibleValue::Value(1)
-                            } else {
-                                PossibleValue::Zero
-                            }
-                        }
-                        PossibleValue::Range(b, c, inputs) => {
-                            if *a >= *b && *a <= *c {
-                                PossibleValue::Range(0, 1, inputs.clone())
-                            } else {
-                                PossibleValue::Zero
-                            }
-                        }
-                    },
-                )),
-                Value::Variable(register2) => {
-                    let value = &registers[*register];
-                    let value2 = &registers[*register2];
-                    Some((
-                        *register,
-                        match value2 {
-                            PossibleValue::Zero => match value {
-                                PossibleValue::Zero => PossibleValue::Value(1),
-                                PossibleValue::Value(a) => {
-                                    if *a == 0 {
-                                        PossibleValue::Value(1)
-                                    } else {
-                                        PossibleValue::Zero
-                                    }
-                                }
-                                PossibleValue::Range(a, b, inputs) => {
-                                    if *a <= 0 && *b >= 0 {
-                                        PossibleValue::Range(0, 1, inputs.clone())
-                                    } else {
-                                        PossibleValue::Zero
-                                    }
-                                }
-                            },
-                            PossibleValue::Value(a) => match value {
-                                PossibleValue::Zero => {
-                                    if *a == 0 {
-                                        PossibleValue::Value(1)
-                                    } else {
-                                        PossibleValue::Zero
-                                    }
-                                }
-                                PossibleValue::Value(b) => {
-                                    if *a == *b {
-                                        PossibleValue::Value(1)
-                                    } else {
-                                        PossibleValue::Zero
-                                    }
-                                }
-                                PossibleValue::Range(b, c, inputs) => {
-                                    if *b <= *a && *c >= *a {
-                                        PossibleValue::Range(0, 1, inputs.clone())
-                                    } else {
-                                        PossibleValue::Zero
-                                    }
-                                }
-                            },
-                            PossibleValue::Range(a, b, inputs) => match value {
-                                PossibleValue::Zero => {
-                                    if *a <= 0 && *b >= 0 {
-                                        PossibleValue::Range(0, 1, inputs.clone())
-                                    } else {
-                                        PossibleValue::Zero
-                                    }
-                                }
-                                PossibleValue::Value(c) => {
-                                    if *a <= *c && *b >= *c {
-                                        PossibleValue::Range(0, 1, inputs.clone())
-                                    } else {
-                                        PossibleValue::Zero
-                                    }
-                                }
-                                PossibleValue::Range(c, d, inputs2) => {
-                                    if *a <= *d && *b >= *c {
-                                        let mut inputs = inputs.clone();
-                                        inputs.extend(inputs2);
-                                        PossibleValue::Range(0, 1, inputs)
-                                    } else {
-                                        PossibleValue::Zero
-                                    }
-                                }
-                            },
-                        },
-                    ))
+            Instructions::Eql(register, value) => {
+                for (registers, inputs) in states.iter() {
+                    let op1 = registers[*register];
+                    let op2 = if let Value::Number(number) = value {
+                        *number
+                    } else if let Value::Variable(register2) = value {
+                        registers[*register2]
+                    } else {
+                        panic!()
+                    };
+                    let mut registers = registers.clone();
+                    *registers.get_mut(*register).unwrap() = if op1 == op2 { 1 } else { 0 };
+
+                    for (a, b) in states_new
+                        .entry(registers)
+                        .or_insert(vec![HashSet::new(); 14])
+                        .iter_mut()
+                        .zip(inputs)
+                    {
+                        a.extend(b);
+                    }
                 }
-            },
+            }
         };
 
-        match result {
-            Some((register, possible_value)) => {
-                *registers.get_mut(register).unwrap() = possible_value;
-                useful_instruction.push((instruction.clone(), registers_backup));
-            }
-            None => (),
-        }
+        states = states_new;
     }
 
-    println!("Program:");
-    for inst in useful_instruction.iter() {
-        let registers = inst
-            .1
-            .iter()
-            .map(|val| {
-                if let PossibleValue::Range(a, b, _) = val {
-                    PossibleValue::Range(*a, *b, HashSet::new())
-                } else {
-                    val.clone()
-                }
-            })
-            .collect::<Vec<_>>();
-        println!("{:?} {:?}", inst.0, registers);
-    }
-    println!();
+    println!("states len: {}", states.len());
+    println!("states: {:?}", states);
 
     todo!();
 }
@@ -348,6 +235,7 @@ fn parse_input(input: &str) -> Vec<Instructions> {
         .collect()
 }
 
+#[allow(dead_code)]
 fn get_input() -> &'static str {
     return include_str!("./input.txt");
 }
@@ -357,8 +245,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
-        process_instructions(get_input());
-        assert!(false);
+    fn part1_test() {
+        assert_eq!(97919997299495, get_solution_part1());
+    }
+
+    #[test]
+    fn part2_test() {
+        assert_eq!(51619131181131, get_solution_part2());
     }
 }
